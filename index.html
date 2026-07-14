@@ -890,7 +890,7 @@
       '<b>Mobile:</b> On-screen buttons — rotate, thrust, fire<br><b>Desktop:</b> WASD / Arrows &middot; Space to shoot &middot; P / Esc to pause';
   }
 
-  document.addEventListener('touchmove', (e) => {
+  canvas.addEventListener('touchmove', (e) => {
     if (gameState === STATE.PLAYING || gameState === STATE.PAUSED) e.preventDefault();
   }, { passive: false });
 
@@ -1380,8 +1380,28 @@
 
   // ============================================================
   // Wire up UI events
+  //
+  // Buttons are bound via bindTap() rather than a plain 'click' listener:
+  // on real touch devices, a document-wide (or even ancestor-wide)
+  // touchmove preventDefault elsewhere in the page can suppress the
+  // browser's synthesized click for a tap, making buttons feel dead.
+  // Handling touchend directly sidesteps that entirely.
   // ============================================================
-  document.getElementById('difficultyRow').addEventListener('click', (e) => {
+  function bindTap(el, handler) {
+    let suppressClick = false;
+    el.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      suppressClick = true;
+      handler(e);
+      setTimeout(() => { suppressClick = false; }, 500);
+    }, { passive: false });
+    el.addEventListener('click', (e) => {
+      if (suppressClick) return;
+      handler(e);
+    });
+  }
+
+  bindTap(document.getElementById('difficultyRow'), (e) => {
     const btn = e.target.closest('.diff-btn');
     if (!btn) return;
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
@@ -1391,15 +1411,15 @@
     Audio_.uiClick();
   });
 
-  document.getElementById('startBtn').addEventListener('click', startGame);
-  document.getElementById('pauseBtn').addEventListener('click', pauseGame);
-  document.getElementById('resumeBtn').addEventListener('click', resumeGame);
-  document.getElementById('pauseMenuBtn').addEventListener('click', () => {
+  bindTap(document.getElementById('startBtn'), startGame);
+  bindTap(document.getElementById('pauseBtn'), pauseGame);
+  bindTap(document.getElementById('resumeBtn'), resumeGame);
+  bindTap(document.getElementById('pauseMenuBtn'), () => {
     Audio_.uiClick();
     returnToMenu();
   });
-  document.getElementById('playAgainBtn').addEventListener('click', startGame);
-  document.getElementById('goMenuBtn').addEventListener('click', () => {
+  bindTap(document.getElementById('playAgainBtn'), startGame);
+  bindTap(document.getElementById('goMenuBtn'), () => {
     Audio_.uiClick();
     returnToMenu();
   });
@@ -1410,8 +1430,8 @@
     refreshMuteIcons();
     if (!muted) Audio_.uiClick();
   }
-  document.getElementById('muteBtnMenu').addEventListener('click', toggleMute);
-  document.getElementById('muteBtnHud').addEventListener('click', toggleMute);
+  bindTap(document.getElementById('muteBtnMenu'), toggleMute);
+  bindTap(document.getElementById('muteBtnHud'), toggleMute);
 
   // ============================================================
   // Init
