@@ -987,10 +987,8 @@
       if (b.trail.length > 5) b.trail.shift();
       b.x += b.vx * dt;
       b.y += b.vy * dt;
-      b.x = wrap(b.x, W);
-      b.y = wrap(b.y, H);
       b.life -= dt;
-      if (b.life <= 0) bullets.splice(i, 1);
+      if (b.life <= 0 || b.x < 0 || b.x > W || b.y < 0 || b.y > H) bullets.splice(i, 1);
     }
   }
 
